@@ -133,9 +133,9 @@ class JobRepository @Inject constructor(
                 salary = getString("salary"),
                 workMode = WorkMode.from(workModeStr),
                 employmentType = EmploymentType.from(employmentTypeStr),
-                tags = (get("tags") as? List<*>)?.filterIsInstance<String>() ?: emptyList(),
+                skills = (get("skills") as? List<*>)?.filterIsInstance<String>() ?: emptyList(),
                 employerId = getString("employerId") ?: return null,
-                postedAt = getLong("postedAt") ?: 0L
+                postedAt = getTimestamp("postedAt")?.toDate()?.time ?: 0L
             )
         } catch (e: Exception) {
             null

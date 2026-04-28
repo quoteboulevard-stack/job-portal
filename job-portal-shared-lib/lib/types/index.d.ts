@@ -2,14 +2,14 @@ export type ISODateString = string;
 export type UserRole = 'job_seeker' | 'employer' | 'admin';
 export type WorkMode = 'remote' | 'hybrid' | 'onsite';
 export type EmploymentType = 'fulltime' | 'parttime' | 'contract' | 'internship' | 'freelance';
-export type ApplicationStatus = 'pending' | 'reviewed' | 'accepted' | 'rejected' | 'withdrawn';
+export type ApplicationStatus = 'applied' | 'shortlisted' | 'interview' | 'offer' | 'rejected';
 export type MessageStatus = 'waiting' | 'sent' | 'seen' | 'accepted' | 'rejected' | 'expired' | 'invalid';
 export type TransactionType = 'purchase' | 'deduction' | 'refund' | 'topup';
 export type CreditErrorCode = 'insufficient_credits' | 'transaction_failed';
 export interface User {
     id: string;
     email: string;
-    name: string;
+    displayName: string;
     role: UserRole;
     avatarUrl?: string;
     createdAt: ISODateString;
@@ -51,10 +51,10 @@ export interface Job {
 }
 export interface Message {
     id: string;
-    from: string;
-    to: string;
+    fromUserId: string;
+    toUserId: string;
     subject?: string;
-    text: string;
+    body: string;
     status: MessageStatus;
     creditDeducted: boolean;
     creditRefunded?: boolean;
@@ -95,7 +95,7 @@ export interface CreditTransaction {
 export interface Credit {
     available: number;
     used: number;
-    total: number;
+    totalAdded: number;
     transactions: CreditTransaction[];
 }
 export type NotificationType = 'message_received' | 'message_accepted' | 'message_rejected' | 'job_matched' | 'credit_purchased' | 'credit_refunded';

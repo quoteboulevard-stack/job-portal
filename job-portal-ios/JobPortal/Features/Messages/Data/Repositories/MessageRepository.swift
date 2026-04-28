@@ -1,5 +1,6 @@
 import FirebaseAuth
 import FirebaseFirestore
+import FirebaseFunctions
 import Foundation
 
 final class MessageRepository {
@@ -7,6 +8,8 @@ final class MessageRepository {
     private init() {}
 
     private let collection = Firestore.firestore().collection("messages")
+    private lazy var acceptMessageFn = Functions.functions().httpsCallable("acceptMessage")
+    private lazy var rejectMessageFn = Functions.functions().httpsCallable("rejectMessage")
 
     func sendMessage(to recipientId: String, subject: String, body: String) async throws {
         guard let senderId = Auth.auth().currentUser?.uid else {
@@ -39,32 +42,27 @@ final class MessageRepository {
             .order(by: "createdAt", descending: true)
             .addSnapshotListener { snapshot, error in
                 if let error {
-                    let code = FirestoreErrorCode(rawValue: (error as NSError).code)
-                    handler(.failure(
-                        (code == .unavailable || code == .deadlineExceeded)
-                            ? .offline
-                            : .unknown(error.localizedDescription)
-                    ))
+                    handler(.failure(MessageRepositoryError(error)))
                     return
                 }
                 handler(.success(snapshot?.documents.compactMap(Self.map) ?? []))
             }
     }
 
-    func acceptMessage(_ id: String) async throws {
-        try await updateStatus(id: id, fields: ["status": Message.Status.accepted.rawValue])
+    // Returns the newly created conversationId on success.
+    func acceptMessage(_ id: String) async throws -> String? {
+        do {
+            let result = try await acceptMessageFn.call(["messageId": id])
+            let data = result.data as? [String: Any]
+            return data?["conversationId"] as? String ?? nil
+        } catch {
+            throw MessageRepositoryError(error)
+        }
     }
 
     func rejectMessage(_ id: String, reason: String) async throws {
-        try await updateStatus(id: id, fields: [
-            "status": Message.Status.rejected.rawValue,
-            "rejectionReason": reason
-        ])
-    }
-
-    private func updateStatus(id: String, fields: [String: Any]) async throws {
         do {
-            try await collection.document(id).updateData(fields)
+            _ = try await rejectMessageFn.call(["messageId": id, "reason": reason])
         } catch {
             throw MessageRepositoryError(error)
         }
@@ -92,10 +90,20 @@ enum MessageRepositoryError: LocalizedError {
     case unauthenticated, offline, notFound, unknown(String)
 
     init(_ error: Error) {
-        switch FirestoreErrorCode(rawValue: (error as NSError).code) {
-        case .unavailable, .deadlineExceeded: self = .offline
-        case .notFound:                       self = .notFound
-        default:                              self = .unknown(error.localizedDescription)
+        let nsError = error as NSError
+        if nsError.domain == FunctionsErrorDomain {
+            switch FunctionsErrorCode(rawValue: nsError.code) {
+            case .unauthenticated:          self = .unauthenticated
+            case .unavailable:              self = .offline
+            case .notFound:                 self = .notFound
+            default:                        self = .unknown(error.localizedDescription)
+            }
+        } else {
+            switch FirestoreErrorCode(rawValue: nsError.code) {
+            case .unavailable, .deadlineExceeded: self = .offline
+            case .notFound:                       self = .notFound
+            default:                              self = .unknown(error.localizedDescription)
+            }
         }
     }
 

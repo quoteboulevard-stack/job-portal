@@ -26,8 +26,10 @@ export interface SkillGap {
 }
 
 export interface MissingSkillsInput {
-  jobId: string;
   applicationId: string;
+  // jobId is intentionally absent: the backend derives it from the
+  // application document after ownership verification so the caller
+  // cannot substitute a different job's requirements.
 }
 
 export interface MissingSkillsDetail {

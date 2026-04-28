@@ -122,14 +122,26 @@ export async function listMessageRequestsForUser(
   ]);
 
   const seen = new Set<string>();
-  const results: MessageRequestRecord[] = [];
+  const uniqueDocs: (typeof sentSnap.docs)[number][] = [];
   for (const docSnap of [...sentSnap.docs, ...receivedSnap.docs]) {
     if (!seen.has(docSnap.id)) {
       seen.add(docSnap.id);
-      results.push(mapMessageRequest(docSnap.id, docSnap.data() as Record<string, unknown>));
+      uniqueDocs.push(docSnap);
     }
   }
-  return results.sort((a, b) => b.date.localeCompare(a.date));
+
+  const tsMillis = (v: unknown): number =>
+    (v as { toMillis?: () => number } | null)?.toMillis?.() ?? 0;
+
+  uniqueDocs.sort((a, b) => {
+    const ad = a.data() as Record<string, unknown>;
+    const bd = b.data() as Record<string, unknown>;
+    return tsMillis(bd["createdAt"] ?? bd["updatedAt"]) - tsMillis(ad["createdAt"] ?? ad["updatedAt"]);
+  });
+
+  return uniqueDocs.map((docSnap) =>
+    mapMessageRequest(docSnap.id, docSnap.data() as Record<string, unknown>)
+  );
 }
 
 export async function listPendingEmployerMessages(

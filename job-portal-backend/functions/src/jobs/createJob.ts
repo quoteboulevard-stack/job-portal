@@ -115,6 +115,7 @@ export const createJob = functions
       perks,
       employerId: uid,
       status: 'open',
+      postedAt:  serverTs,
       createdAt: serverTs,
       updatedAt: serverTs,
     });

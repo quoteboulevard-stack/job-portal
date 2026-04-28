@@ -54,29 +54,38 @@ export const missingSkills = functions
       throw new functions.https.HttpsError('unauthenticated', 'Authentication required.');
     }
 
-    const { jobId, applicationId } = data ?? {};
-    if (!jobId || !applicationId) {
-      throw new functions.https.HttpsError('invalid-argument', 'Both jobId and applicationId are required.');
+    const applicationId = String(data?.applicationId ?? '').trim();
+    if (!applicationId) {
+      throw new functions.https.HttpsError('invalid-argument', 'applicationId is required.');
     }
 
     const uid = context.auth.uid;
-    log('Request received', { uid, applicationId, jobId });
+    log('Request received', { uid, applicationId });
 
     await assertPremium(uid);
 
     const db = getFirestore();
 
-    const [appSnap, jdSnap] = await Promise.all([
-      db.collection('applications').doc(applicationId).get(),
-      db.collection('jobs').doc(jobId).get(),
-    ]);
-
+    const appSnap = await db.collection('applications').doc(applicationId).get();
     if (!appSnap.exists) {
       throw new functions.https.HttpsError('not-found', `Application ${applicationId} not found.`);
     }
 
-    const appData = appSnap.data() as Partial<FitScoreDocument>;
+    const appRaw = appSnap.data() as Record<string, unknown>;
 
+    // Ownership check before accessing any application data.
+    if (appRaw['userId'] !== uid) {
+      throw new functions.https.HttpsError('permission-denied', 'Access denied.');
+    }
+
+    // Derive jobId from the application document — the caller cannot substitute
+    // a different job's requirements for their application.
+    const jobId = String(appRaw['jobId'] ?? '');
+    if (!jobId) {
+      throw new functions.https.HttpsError('internal', 'Application is missing jobId.');
+    }
+
+    const appData = appRaw as Partial<FitScoreDocument>;
     if (appData.status !== 'success' || !appData.missing_skills?.length) {
       throw new functions.https.HttpsError(
         'failed-precondition',
@@ -84,15 +93,10 @@ export const missingSkills = functions
       );
     }
 
-    // Ensure caller owns the application
-    const appOwner = (appSnap.data() as Record<string, unknown>)?.['userId'];
-    if (appOwner !== uid) {
-      throw new functions.https.HttpsError('permission-denied', 'Access denied.');
-    }
+    const jdSnap = await db.collection('jobs').doc(jobId).get();
+    const jobTitle = jdSnap.exists ? (jdSnap.data()?.['title'] as string | null) : null;
 
-    const jobTitle = jdSnap.exists ? (jdSnap.data()?.['parsed']?.title as string | null) : null;
-
-    log('Calling Claude', { applicationId, missingCount: appData.missing_skills.length });
+    log('Calling Claude', { applicationId, jobId, missingCount: appData.missing_skills.length });
 
     let skill_gaps: SkillGap[];
     try {
@@ -116,6 +120,6 @@ export const missingSkills = functions
       .doc('latest')
       .set(detail);
 
-    log('Analysis stored', { applicationId, gaps: skill_gaps.length });
+    log('Analysis stored', { applicationId, jobId, gaps: skill_gaps.length });
     return { skill_gaps };
   });

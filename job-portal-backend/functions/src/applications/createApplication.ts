@@ -10,26 +10,17 @@ const log = (msg: string, data?: object) =>
 export const createApplication = functions
   .runWith({ timeoutSeconds: TIMEOUTS.DEFAULT_REQUEST / 1000, memory: '256MB' })
   .https.onCall(async (
-    data: { jobId: string; jobTitle: string; company: string; employerId: string },
+    data: { jobId: string },
     context
   ) => {
     if (!context.auth?.uid) {
       throw new functions.https.HttpsError('unauthenticated', 'Authentication required.');
     }
 
-    const uid = context.auth.uid;
-    const jobId      = String(data?.jobId      ?? '').trim();
-    const jobTitle   = String(data?.jobTitle   ?? '').trim();
-    const company    = String(data?.company    ?? '').trim();
-    const employerId = String(data?.employerId ?? '').trim();
+    const uid   = context.auth.uid;
+    const jobId = String(data?.jobId ?? '').trim();
 
-    if (!jobId)      throw new functions.https.HttpsError('invalid-argument', 'jobId is required.');
-    if (!jobTitle)   throw new functions.https.HttpsError('invalid-argument', 'jobTitle is required.');
-    if (!company)    throw new functions.https.HttpsError('invalid-argument', 'company is required.');
-    if (!employerId) throw new functions.https.HttpsError('invalid-argument', 'employerId is required.');
-    if (uid === employerId) {
-      throw new functions.https.HttpsError('invalid-argument', 'Employers cannot apply to their own jobs.');
-    }
+    if (!jobId) throw new functions.https.HttpsError('invalid-argument', 'jobId is required.');
 
     const db = getFirestore();
 
@@ -51,6 +42,17 @@ export const createApplication = functions
     const jobSnap = await db.collection(COLLECTIONS.JOBS).doc(jobId).get();
     if (!jobSnap.exists) {
       throw new functions.https.HttpsError('not-found', 'Job not found.');
+    }
+    const job        = jobSnap.data() as Record<string, unknown>;
+    const jobTitle   = String(job['title']      ?? '');
+    const company    = String(job['company']    ?? '');
+    const employerId = String(job['employerId'] ?? '');
+
+    if (!employerId) {
+      throw new functions.https.HttpsError('internal', 'Job is missing employerId.');
+    }
+    if (uid === employerId) {
+      throw new functions.https.HttpsError('invalid-argument', 'Employers cannot apply to their own jobs.');
     }
 
     const applicantName  = String(caller['displayName'] ?? context.auth.token.name  ?? '');

@@ -11,6 +11,15 @@ export const COLLECTIONS = {
   AUDIT_LOGS: "auditLogs",
 } as const;
 
+// Canonical application statuses — keep in sync with types/index.ts ApplicationStatus
+export const APPLICATION_STATUS = {
+  APPLIED:     'applied',
+  SHORTLISTED: 'shortlisted',
+  INTERVIEW:   'interview',
+  OFFER:       'offer',
+  REJECTED:    'rejected',
+} as const;
+
 // Canonical message lifecycle statuses — keep in sync with types/index.ts MessageStatus
 export const MESSAGE_STATUS = {
   WAITING:  "waiting",

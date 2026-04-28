@@ -57,3 +57,6 @@ export { razorpayWebhook } from './payments/razorpayWebhook';
 // ─── Scheduled ────────────────────────────────────────────────────────────────
 export { refundExpiredMessages } from './scheduled/refundExpiredMessages';
 export { cleanupOldData }        from './scheduled/cleanupOldData';
+
+// ─── Migrations ───────────────────────────────────────────────────────────────
+export { migrateFieldNames } from './scheduled/migrateFieldNames';

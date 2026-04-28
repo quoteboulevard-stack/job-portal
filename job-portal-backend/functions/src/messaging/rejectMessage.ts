@@ -16,6 +16,7 @@ const log = (msg: string, data?: object) =>
   functions.logger.info(`[rejectMessage] ${msg}`, data ?? {});
 
 const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
+const MIN_REASON_LENGTH = 3;
 const MAX_REASON_LENGTH = 500;
 
 // ─── Email ────────────────────────────────────────────────────────────────────
@@ -47,8 +48,8 @@ export const rejectMessage = functions
     if (!messageId?.trim()) {
       throw new functions.https.HttpsError('invalid-argument', 'messageId is required.');
     }
-    if (!reason?.trim()) {
-      throw new functions.https.HttpsError('invalid-argument', 'reason is required.');
+    if (!reason?.trim() || reason.trim().length < MIN_REASON_LENGTH) {
+      throw new functions.https.HttpsError('invalid-argument', `reason must be at least ${MIN_REASON_LENGTH} characters.`);
     }
     if (reason.trim().length > MAX_REASON_LENGTH) {
       throw new functions.https.HttpsError('invalid-argument', `reason exceeds ${MAX_REASON_LENGTH} characters.`);
@@ -114,7 +115,7 @@ export const rejectMessage = functions
         messageId,
       };
 
-      tx.update(messageRef, { status: 'rejected', rejectedAt: serverTs, reason: trimmedReason, creditDeducted: true });
+      tx.update(messageRef, { status: 'rejected', rejectedAt: serverTs, rejectionReason: trimmedReason, creditDeducted: true });
       tx.set(blockRef, blockEntry);
     });
 

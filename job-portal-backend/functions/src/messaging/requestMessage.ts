@@ -2,6 +2,7 @@ import * as functions from "firebase-functions";
 import * as admin from "firebase-admin";
 import { getFirestore } from "../shared/firebaseAdmin";
 
+const MIN_SUBJECT_LENGTH = 3;
 const MAX_SUBJECT_LENGTH = 160;
 const MAX_BODY_LENGTH = 2000;
 
@@ -29,10 +30,10 @@ export const requestMessage = functions
           "toUserId is required."
         );
       }
-      if (!subject || subject.length > MAX_SUBJECT_LENGTH) {
+      if (!subject || subject.length < MIN_SUBJECT_LENGTH || subject.length > MAX_SUBJECT_LENGTH) {
         throw new functions.https.HttpsError(
           "invalid-argument",
-          `subject is required and must be <= ${MAX_SUBJECT_LENGTH} characters.`
+          `subject must be ${MIN_SUBJECT_LENGTH}–${MAX_SUBJECT_LENGTH} characters.`
         );
       }
       if (!body || body.length > MAX_BODY_LENGTH) {
@@ -71,6 +72,20 @@ export const requestMessage = functions
         throw new functions.https.HttpsError(
           "permission-denied",
           "Messages can only be sent to employers."
+        );
+      }
+
+      // Prevent duplicate active requests to the same employer.
+      const existing = await db.collection("messages")
+        .where("fromUserId", "==", context.auth.uid)
+        .where("toUserId",   "==", toUserId)
+        .where("status", "in", ["waiting", "sent", "seen"])
+        .limit(1)
+        .get();
+      if (!existing.empty) {
+        throw new functions.https.HttpsError(
+          "already-exists",
+          "You already have an active message request to this employer."
         );
       }
 

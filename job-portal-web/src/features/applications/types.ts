@@ -22,7 +22,4 @@ export interface ApplicationRecord {
 
 export interface ApplicationCreatePayload {
   jobId: string;
-  jobTitle: string;
-  company: string;
-  employerId: string;
 }

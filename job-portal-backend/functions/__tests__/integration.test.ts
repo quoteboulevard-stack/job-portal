@@ -26,6 +26,10 @@ if (!admin.apps.length) {
 const db = admin.firestore();
 db.settings({ ignoreUndefinedProperties: true });
 
+// Emulator operations (gRPC connection setup + writes) routinely exceed
+// Jest's default 5 s timeout, especially on a cold emulator start.
+jest.setTimeout(30_000);
+
 // Mock Claude so integration tests don't hit the real API.
 // Response uses tool_use format to match the hardened computeFitScore (tool_choice enforced).
 jest.mock('@anthropic-ai/sdk', () => jest.fn().mockImplementation(() => ({
@@ -72,6 +76,17 @@ const jd        = { status: 'success', parsed: { title: 'Frontend Dev', requirem
 // ─── Test Suites ──────────────────────────────────────────────────────────────
 
 beforeAll(async () => {
+  // Fail fast with an actionable message when the emulator isn't running,
+  // instead of hanging silently until Jest's timeout fires.
+  try {
+    await db.collection('_health').doc('_ping').get();
+  } catch (err) {
+    throw new Error(
+      `Firestore emulator unreachable at ${process.env.FIRESTORE_EMULATOR_HOST}. ` +
+      `Run: firebase emulators:start --only firestore,auth,storage\n${String(err)}`
+    );
+  }
+
   await Promise.all([
     seed('users', 'seeker1', jobSeeker),
     seed('users', 'employer1', employer),
@@ -85,6 +100,8 @@ afterAll(async () => {
     clearCollection('users'), clearCollection('resumes'), clearCollection('jobs'),
     clearCollection('messages'), clearCollection('applications'),
   ]);
+  // Close the gRPC channel so Jest exits cleanly without --forceExit.
+  await db.terminate();
 });
 
 // ─── Flow 1: Message send → HR views → credit deducted ───────────────────────

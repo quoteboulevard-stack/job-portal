@@ -59,7 +59,7 @@ async function deleteRejectedMessages(db: FirebaseFirestore.Firestore): Promise<
 
 async function archiveOldChats(db: FirebaseFirestore.Firestore): Promise<number> {
   const cutoff = admin.firestore.Timestamp.fromMillis(Date.now() - NINETY_DAYS_MS);
-  const snap = await db.collection('chats')
+  const snap = await db.collection('conversations')
     .where('lastMessageAt', '<', cutoff)
     .limit(BATCH_SIZE)
     .get();
@@ -70,11 +70,11 @@ async function archiveOldChats(db: FirebaseFirestore.Firestore): Promise<number>
   const firestoreBatch = db.batch();
   let archived = 0;
 
-  // Archive each chat first; only add to the delete batch if the archive succeeded.
+  // Archive each conversation first; only add to the delete batch if the archive succeeded.
   // This prevents data loss when Storage is temporarily unavailable.
   const results = await Promise.allSettled(
     snap.docs.map(async (doc) => {
-      const archivePath = `archives/chats/${doc.id}.json`;
+      const archivePath = `archives/conversations/${doc.id}.json`;
       await bucket.file(archivePath).save(JSON.stringify({ id: doc.id, ...doc.data() }), {
         contentType: 'application/json',
         metadata: { archivedAt: new Date().toISOString() },
@@ -88,15 +88,15 @@ async function archiveOldChats(db: FirebaseFirestore.Firestore): Promise<number>
       firestoreBatch.delete(result.value.ref);
       archived++;
     } else {
-      functions.logger.error('[cleanupOldData] Failed to archive chat — Firestore doc retained', {
-        chatId: snap.docs[i]!.id,
+      functions.logger.error('[cleanupOldData] Failed to archive conversation — Firestore doc retained', {
+        conversationId: snap.docs[i]!.id,
         error: result.reason instanceof Error ? result.reason.message : result.reason,
       });
     }
   });
 
   await firestoreBatch.commit();
-  log('Chats archived', { archived });
+  log('Conversations archived', { archived });
   return archived;
 }
 

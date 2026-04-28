@@ -4,7 +4,8 @@ import { getFirestore } from '../shared/firebaseAdmin';
 import { TIMEOUTS } from '../shared/constants';
 import type { ConversationDocument } from './types';
 
-const MAX_MESSAGE_LENGTH = 2_000;
+const MAX_MESSAGE_LENGTH   = 2_000;
+const LAST_MESSAGE_PREVIEW = 200;
 
 const log = (msg: string, data?: object) =>
   functions.logger.info(`[sendChatMessage] ${msg}`, data ?? {});
@@ -80,7 +81,9 @@ export const sendChatMessage = functions
         readBy: [uid],
       });
       tx.update(conversationRef, {
-        lastMessage: text,
+        lastMessage: text.length > LAST_MESSAGE_PREVIEW
+          ? text.slice(0, LAST_MESSAGE_PREVIEW) + '…'
+          : text,
         lastMessageAt: serverTs,
       });
     });

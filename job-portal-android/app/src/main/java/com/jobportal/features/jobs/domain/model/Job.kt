@@ -9,7 +9,7 @@ data class Job(
     val salary: String?,
     val workMode: WorkMode,
     val employmentType: EmploymentType,
-    val tags: List<String>,
+    val skills: List<String>,
     val employerId: String,
     val postedAt: Long
 )

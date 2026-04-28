@@ -115,7 +115,7 @@ export const listAdminApplications = functions
         applicantEmail: String(d['applicantEmail'] ?? ''),
         employerId: String(d['employerId'] ?? ''),
         status: String(d['status'] ?? 'applied'),
-        fitScore: typeof d['fitScore'] === 'number' ? d['fitScore'] : null,
+        fitScore: typeof d['fit_score'] === 'number' ? d['fit_score'] : null,
         appliedAt: formatTimestamp(d['appliedAt'] ?? d['createdAt']),
       };
     });
