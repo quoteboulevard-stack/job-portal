@@ -1,0 +1,81 @@
+.job-card {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 16px;
+  cursor: pointer;
+  text-decoration: none;
+  transition: box-shadow 0.15s ease;
+}
+
+.job-card:hover {
+  box-shadow: 0 4px 12px rgba(17, 24, 39, 0.08);
+}
+
+.job-card-body {
+  display: grid;
+  gap: 10px;
+}
+
+.job-card-title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+  color: #111827;
+}
+
+.job-card-company {
+  margin: 4px 0 0;
+  font-size: 14px;
+  color: #6b7280;
+}
+
+.job-card-badges {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.job-card-salary {
+  margin: 0;
+  font-size: 14px;
+  color: #111827;
+}
+
+.job-card-fit {
+  display: grid;
+  gap: 6px;
+}
+
+.job-card-fit-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #059669;
+}
+
+.job-card-fit-bar {
+  -webkit-appearance: none;
+  appearance: none;
+  display: block;
+  width: 100%;
+  height: 8px;
+  border: none;
+  border-radius: 999px;
+  background: #d1fae5;
+  overflow: hidden;
+}
+
+.job-card-fit-bar::-webkit-progress-bar {
+  background: #d1fae5;
+  border-radius: 999px;
+}
+
+.job-card-fit-bar::-webkit-progress-value {
+  background: #10b981;
+  border-radius: 999px;
+}
+
+.job-card-fit-bar::-moz-progress-bar {
+  background: #10b981;
+  border-radius: 999px;
+}

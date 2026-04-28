@@ -1,0 +1,45 @@
+{
+  "name": "job-portal-functions",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Firebase Cloud Functions for the job portal system",
+  "main": "lib/index.js",
+  "scripts": {
+    "build": "tsc --build",
+    "build:watch": "tsc --build --watch",
+    "serve": "npm run build && firebase emulators:start --only functions",
+    "deploy": "firebase deploy --only functions",
+    "test": "jest --testPathPattern=src/__tests__",
+    "test:integration": "FIRESTORE_EMULATOR_HOST=localhost:8080 FIREBASE_PROJECT_ID=demo-test jest --testPathPattern=functions/__tests__ --runInBand --forceExit",
+    "test:all": "npm test && npm run test:integration"
+  },
+  "engines": {
+    "node": "20"
+  },
+  "dependencies": {
+    "@job-portal/shared": "*",
+    "@anthropic-ai/sdk": "^0.39.0",
+    "@sendgrid/mail": "^8.1.4",
+    "firebase-admin": "^12.7.0",
+    "firebase-functions": "^4.9.0",
+    "mammoth": "^1.8.0",
+    "pdf-parse": "^1.1.1",
+    "stripe": "^16.12.0"
+  },
+  "devDependencies": {
+    "@types/jest": "^30.0.0",
+    "@types/node": "^20.17.30",
+    "@types/pdf-parse": "^1.1.4",
+    "firebase-functions-test": "^3.4.1",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.2.5",
+    "typescript": "^5.7.3"
+  },
+  "jest": {
+    "preset": "ts-jest",
+    "testEnvironment": "node",
+    "testMatch": [
+      "**/__tests__/**/*.test.ts"
+    ]
+  }
+}

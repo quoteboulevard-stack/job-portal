@@ -1,0 +1,14 @@
+# Dependencies
+node_modules/
+
+# Build output — generated at deploy time, never commit
+/build
+
+# Environment secrets
+.env.local
+.env.*.local
+.env.production
+
+# Misc
+.DS_Store
+npm-debug.log*

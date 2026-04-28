@@ -1,0 +1,29 @@
+{
+  "name": "@job-portal/shared",
+  "version": "1.0.0",
+  "private": true,
+  "main": "lib/index.js",
+  "types": "lib/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./lib/index.d.ts",
+      "default": "./lib/index.js"
+    },
+    "./utils/logger": {
+      "types": "./lib/src/utils/logger.d.ts",
+      "default": "./lib/src/utils/logger.js"
+    },
+    "./utils/errors": {
+      "types": "./lib/src/utils/errorHandler.d.ts",
+      "default": "./lib/src/utils/errorHandler.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "build:watch": "tsc --watch"
+  },
+  "devDependencies": {
+    "@types/node": "^20.17.0",
+    "typescript": "^5.7.3"
+  }
+}

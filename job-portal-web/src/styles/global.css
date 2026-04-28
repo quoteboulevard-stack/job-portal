@@ -1,0 +1,391 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+  --bg: #f7f4ee;
+  --surface: #ffffff;
+  --surface-alt: #fffaf3;
+  --text: #1c1917;
+  --muted: #57534e;
+  --border: #e7dccb;
+  --primary: #0f766e;
+  --primary-strong: #115e59;
+  --accent: #d97706;
+  --success: #15803d;
+  --shadow: 0 18px 50px rgba(28, 25, 23, 0.08);
+  --radius: 18px;
+  font-family: "Avenir Next", "Segoe UI", system-ui, sans-serif;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  background:
+    radial-gradient(circle at top left, rgba(217, 119, 6, 0.12), transparent 32%),
+    linear-gradient(180deg, #fffdf8 0%, var(--bg) 100%);
+  color: var(--text);
+}
+
+a {
+  color: inherit;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+.app-shell {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.app-header {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(16px);
+  background: rgba(255, 253, 248, 0.88);
+  border-bottom: 1px solid rgba(231, 220, 203, 0.9);
+}
+
+.app-header__inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 1rem 1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.app-brand {
+  font-size: 1.35rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--primary);
+  text-decoration: none;
+}
+
+.app-nav {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.app-nav a,
+.app-link-muted {
+  text-decoration: none;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.app-nav a.active {
+  color: var(--text);
+}
+
+.app-header__actions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.app-main {
+  flex: 1;
+}
+
+.page {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem 1.25rem 3rem;
+}
+
+.page--stack {
+  display: grid;
+  gap: 2rem;
+}
+
+.hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(320px, 0.8fr);
+  gap: 1.5rem;
+  align-items: start;
+}
+
+.hero__copy,
+.hero__panel,
+.filters-card,
+.login-card {
+  background: rgba(255, 255, 255, 0.86);
+  border: 1px solid var(--border);
+  border-radius: calc(var(--radius) + 4px);
+  box-shadow: var(--shadow);
+}
+
+.hero__copy {
+  padding: 2rem;
+}
+
+.hero__copy h1,
+.section-heading h1,
+.section-heading h2 {
+  margin: 0;
+  letter-spacing: -0.03em;
+}
+
+.hero__copy h1 {
+  font-size: clamp(2.6rem, 5vw, 4.6rem);
+  line-height: 0.96;
+  max-width: 10ch;
+}
+
+.hero__lede,
+.panel-copy p,
+.job-card__summary,
+.message-thread__preview,
+.muted {
+  color: var(--muted);
+}
+
+.hero__lede {
+  margin-top: 1rem;
+  max-width: 56ch;
+  font-size: 1.05rem;
+}
+
+.eyebrow {
+  margin: 0 0 0.75rem;
+  color: var(--accent);
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.hero__actions,
+.filters-row,
+.job-card__top,
+.job-card__footer,
+.application-card__top,
+.message-thread__top,
+.progress-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.hero__actions {
+  margin-top: 1.5rem;
+  justify-content: flex-start;
+  flex-wrap: wrap;
+}
+
+.hero__metrics,
+.stats-grid,
+.card-grid,
+.dashboard-grid {
+  display: grid;
+  gap: 1rem;
+}
+
+.hero__metrics {
+  margin-top: 1.5rem;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.hero__panel {
+  padding: 1.5rem;
+  display: grid;
+  gap: 1.25rem;
+}
+
+.hero__panel-copy h2,
+.panel-copy h2,
+.job-card h2,
+.application-card h2,
+.message-thread h2 {
+  margin: 0;
+  font-size: 1.15rem;
+}
+
+.hero__panel-copy p,
+.panel-copy p,
+.job-card p,
+.application-card p,
+.message-thread p {
+  margin: 0.35rem 0 0;
+}
+
+.hero__panel-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.hero__panel-stats span {
+  display: block;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.hero__panel-stats strong {
+  display: block;
+  margin-top: 0.35rem;
+  font-size: 1.5rem;
+}
+
+.section-heading {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.card-grid {
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+}
+
+.job-card,
+.application-card,
+.message-thread,
+.panel-copy,
+.login-form {
+  display: grid;
+  gap: 1rem;
+}
+
+.job-card__footer strong,
+.progress-row strong {
+  display: block;
+  margin-top: 0.25rem;
+}
+
+.filters-card {
+  padding: 1rem;
+}
+
+.filters-row {
+  align-items: end;
+  flex-wrap: wrap;
+}
+
+.filters-field {
+  flex: 1 1 340px;
+}
+
+.select-field {
+  min-width: 220px;
+  display: grid;
+  gap: 0.5rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.select-field select {
+  padding: 0.875rem 1rem;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+}
+
+.progress-bar {
+  height: 10px;
+  border-radius: 999px;
+  background: #d9f99d;
+  overflow: hidden;
+}
+
+.progress-bar__fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--success), #22c55e);
+}
+
+.message-list {
+  display: grid;
+  gap: 1rem;
+}
+
+.stats-grid {
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+}
+
+.dashboard-grid {
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+}
+
+.metric-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.85rem;
+}
+
+.metric-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-bottom: 0.85rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.login-page {
+  display: grid;
+  place-items: center;
+  min-height: calc(100vh - 220px);
+}
+
+.login-card {
+  width: min(100%, 520px);
+  padding: 2rem;
+}
+
+@media (max-width: 900px) {
+  .hero {
+    grid-template-columns: 1fr;
+  }
+
+  .hero__metrics,
+  .hero__panel-stats {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 720px) {
+  .app-header__inner {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .app-header__actions {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .hero__copy {
+    padding: 1.5rem;
+  }
+
+  .page {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+}

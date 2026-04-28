@@ -1,0 +1,16 @@
+{
+  "name": "job-portal",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "job-portal-shared-lib",
+    "job-portal-web",
+    "job-portal-backend/functions"
+  ],
+  "scripts": {
+    "build:shared": "npm run build --workspace=job-portal-shared-lib",
+    "build:backend": "npm run build --workspace=job-portal-backend/functions",
+    "build:web": "npm run build --workspace=job-portal-web",
+    "build": "npm run build:shared && npm run build:backend && npm run build:web"
+  }
+}

@@ -1,0 +1,12 @@
+.job-list-page {
+  display: grid;
+  gap: 16px;
+}
+
+.job-list-error {
+  margin: 16px 16px 0;
+  padding: 16px;
+  border-radius: 12px;
+  background: #fef2f2;
+  color: #b91c1c;
+}

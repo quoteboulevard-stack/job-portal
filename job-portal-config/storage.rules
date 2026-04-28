@@ -1,0 +1,101 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    // -------------------------------------------------------------------------
+    // Helpers
+    // -------------------------------------------------------------------------
+    function isAuthed() {
+      return request.auth != null;
+    }
+
+    function isOwner(uid) {
+      return isAuthed() && request.auth.uid == uid;
+    }
+
+    function isValidFileSize(maxMB) {
+      return request.resource.size <= maxMB * 1024 * 1024;
+    }
+
+    function isDocType() {
+      return request.resource.contentType == 'application/pdf'
+          || request.resource.contentType == 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+    }
+
+    function isImageType() {
+      return request.resource.contentType.matches('image/(jpeg|png|webp)');
+    }
+
+    // -------------------------------------------------------------------------
+    // resumes/{userId}/{fileName}
+    //   - Owner can upload (PDF/DOCX, max 5 MB) and read their own resume.
+    //   - Cloud Functions read via Admin SDK (bypasses rules).
+    // -------------------------------------------------------------------------
+    match /resumes/{userId}/{fileName} {
+      allow read:   if isOwner(userId);
+      allow create,
+            update: if isOwner(userId)
+                    && isDocType()
+                    && isValidFileSize(5);
+      allow delete: if isOwner(userId);
+    }
+
+    // -------------------------------------------------------------------------
+    // jobs/{jobId}/{fileName}
+    //   - Authenticated users can read JD files (job listings are public).
+    //   - Only the authenticated uploader can write (employer enforced by Cloud
+    //     Function that validates job ownership before triggering parsing).
+    // -------------------------------------------------------------------------
+    match /jobs/{jobId}/{fileName} {
+      allow read:   if isAuthed();
+      allow create,
+            update: if isAuthed()
+                    && isDocType()
+                    && isValidFileSize(5);
+      allow delete: if isAuthed();
+    }
+
+    // -------------------------------------------------------------------------
+    // users/{userId}/avatar/{fileName}
+    //   - Owner can upload (image types, max 2 MB) and read their own avatar.
+    //   - Anyone authenticated can read avatars (for UI display).
+    // -------------------------------------------------------------------------
+    match /users/{userId}/avatar/{fileName} {
+      allow read:   if isAuthed();
+      allow create,
+            update: if isOwner(userId)
+                    && isImageType()
+                    && isValidFileSize(2);
+      allow delete: if isOwner(userId);
+    }
+
+    // -------------------------------------------------------------------------
+    // temp/{allPaths=**}
+    //   - Authenticated users can write to the temp staging area.
+    //   - Reads and deletes are performed by Cloud Functions (Admin SDK).
+    // -------------------------------------------------------------------------
+    match /temp/{allPaths=**} {
+      allow create: if isAuthed() && isValidFileSize(10);
+      allow read,
+            update,
+            delete: if false;
+    }
+
+    // -------------------------------------------------------------------------
+    // archives/{allPaths=**}
+    //   - Written and read exclusively by Cloud Functions (Admin SDK).
+    //   - No direct client access.
+    // -------------------------------------------------------------------------
+    match /archives/{allPaths=**} {
+      allow read, write: if false;
+    }
+
+    // -------------------------------------------------------------------------
+    // Catch-all: deny everything else.
+    // -------------------------------------------------------------------------
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+
+  }
+}

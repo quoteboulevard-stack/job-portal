@@ -1,0 +1,216 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // -------------------------------------------------------------------------
+    // Helpers
+    // -------------------------------------------------------------------------
+    function isAuthed() {
+      return request.auth != null;
+    }
+
+    function isOwner(uid) {
+      return isAuthed() && request.auth.uid == uid;
+    }
+
+    function callerData() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+
+    function hasRole(role) {
+      return isAuthed() && callerData().role == role;
+    }
+
+    function isAdmin() {
+      return isAuthed() && callerData().role == 'admin';
+    }
+
+    function isEmployer() { return hasRole('employer'); }
+    function isJobSeeker() { return hasRole('job_seeker'); }
+
+    // Reject any attempt to self-assign a privileged role.
+    function safeRole(data) {
+      return data.role in ['employer', 'job_seeker'];
+    }
+
+    // Caller cannot escalate their own role.
+    function roleUnchanged() {
+      return !('role' in request.resource.data) ||
+             request.resource.data.role == resource.data.role;
+    }
+
+    // Financial fields are server-controlled only (Admin SDK bypasses rules).
+    // Clients must never be able to write balance or totalAdded directly.
+    function balanceUnchanged() {
+      return !('balance'    in request.resource.data) &&
+             !('totalAdded' in request.resource.data);
+    }
+
+    // Verifies the calling employer owns the job linked to the application.
+    // Uses a cross-document get(); safe because jobs are world-readable.
+    function isApplicationJobOwner() {
+      return isEmployer() &&
+             get(/databases/$(database)/documents/jobs/$(resource.data.jobId)).data.employerId == request.auth.uid;
+    }
+
+    // -------------------------------------------------------------------------
+    // users/{userId}
+    //   - Readable only by the account owner or admin.
+    //   - On create: role must be employer/applicant (no self-promotion to admin).
+    //   - On update: role and financial fields (balance, totalAdded) are immutable by the client.
+    // -------------------------------------------------------------------------
+    match /users/{userId} {
+      allow get:    if isOwner(userId) || isAdmin();
+      allow list:   if isAdmin();
+      allow create: if isOwner(userId)
+                    && safeRole(request.resource.data)
+                    && request.resource.data.keys().hasAll(['role', 'email']);
+      // Owner may update their own profile but cannot change role or financial fields.
+      // Admin may update any profile (including role) but cannot touch financial fields.
+      allow update: if (isOwner(userId) && roleUnchanged() && balanceUnchanged())
+                    || (isAdmin() && balanceUnchanged());
+      allow delete: if isAdmin();
+    }
+
+    // -------------------------------------------------------------------------
+    // messages/{messageId}
+    //   - Readable by sender or recipient only.
+    //   - Creator must set themselves as sender; cannot spoof other senders.
+    //   - Immutable after creation (no edits; admin-only delete).
+    // -------------------------------------------------------------------------
+    match /messages/{messageId} {
+      allow read:   if isAdmin()
+                    || (isAuthed()
+                        && (resource.data.fromUserId == request.auth.uid
+                         || resource.data.toUserId   == request.auth.uid));
+      allow create: if isAuthed()
+                    && request.resource.data.fromUserId == request.auth.uid
+                    && request.resource.data.toUserId   is string
+                    && request.resource.data.body        is string
+                    && request.resource.data.body.size() > 0
+                    && request.resource.data.body.size() <= 2000;
+      allow update: if false;
+      allow delete: if isAdmin();
+    }
+
+    // -------------------------------------------------------------------------
+    // jobs/{jobId}
+    //   - World-readable (job seekers can browse without signing in).
+    //   - Only employers can create; only the owning employer can update/delete.
+    // -------------------------------------------------------------------------
+    match /jobs/{jobId} {
+      allow read:   if true;
+      allow create: if isEmployer()
+                    && request.resource.data.employerId == request.auth.uid
+                    && request.resource.data.keys().hasAll(['title', 'employerId', 'status']);
+      allow update: if isEmployer()
+                    && resource.data.employerId == request.auth.uid
+                    && request.resource.data.employerId == resource.data.employerId;
+      allow delete: if isAdmin()
+                    || (isEmployer() && resource.data.employerId == request.auth.uid);
+    }
+
+    // -------------------------------------------------------------------------
+    // applications/{applicationId}
+    //   - Applicant can create (own application only) and read their own.
+    //   - Employer of the linked job can read and update status.
+    //   - Neither party can delete; admin only.
+    // -------------------------------------------------------------------------
+    match /applications/{applicationId} {
+      allow read:   if isAdmin()
+                    || (isAuthed()
+                        && (resource.data.userId == request.auth.uid
+                         || isApplicationJobOwner()));
+      allow create: if isJobSeeker()
+                    && request.resource.data.userId == request.auth.uid
+                    && request.resource.data.keys().hasAll(['userId', 'jobId', 'status']);
+      allow update: if isAuthed()
+                    && (
+                      // Job seeker may withdraw their own application
+                      (resource.data.userId == request.auth.uid
+                        && isJobSeeker()
+                        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'updatedAt']))
+                      ||
+                      // Employer may update status only for jobs they own
+                      (isApplicationJobOwner()
+                        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'updatedAt']))
+                    );
+      allow delete: if isAdmin();
+    }
+
+    // -------------------------------------------------------------------------
+    // credits/{userId}
+    //   - Only the account owner can read their credit balance.
+    //   - All writes go through Admin SDK / Cloud Functions; direct writes blocked.
+    // -------------------------------------------------------------------------
+    match /credits/{userId} {
+      allow read:  if isOwner(userId);
+      allow write: if false;
+    }
+
+    // -------------------------------------------------------------------------
+    // conversations/{conversationId}
+    //   - Created only by acceptMessage Cloud Function (Admin SDK).
+    //   - Participants can read and update metadata (lastMessage, lastMessageAt).
+    // -------------------------------------------------------------------------
+    match /conversations/{conversationId} {
+      allow read:   if isAuthed()
+                    && (resource.data.jobSeekerId == request.auth.uid
+                     || resource.data.employerId  == request.auth.uid)
+                    || isAdmin();
+      allow create: if false;
+      allow update: if isAuthed()
+                    && (resource.data.jobSeekerId == request.auth.uid
+                     || resource.data.employerId  == request.auth.uid)
+                    && request.resource.data.diff(resource.data)
+                         .affectedKeys().hasOnly(['lastMessage', 'lastMessageAt']);
+      allow delete: if isAdmin();
+
+      // conversations/{conversationId}/messages/{messageId}
+      //   - Participants can read and create; only readBy can be updated.
+      match /messages/{messageId} {
+        allow read:   if isAuthed()
+                      && (get(/databases/$(database)/documents/conversations/$(conversationId)).data.jobSeekerId == request.auth.uid
+                       || get(/databases/$(database)/documents/conversations/$(conversationId)).data.employerId  == request.auth.uid);
+        allow create: if isAuthed()
+                      && request.resource.data.senderId == request.auth.uid
+                      && request.resource.data.text is string
+                      && request.resource.data.text.size() > 0
+                      && request.resource.data.text.size() <= 2000
+                      && (get(/databases/$(database)/documents/conversations/$(conversationId)).data.jobSeekerId == request.auth.uid
+                       || get(/databases/$(database)/documents/conversations/$(conversationId)).data.employerId  == request.auth.uid);
+        allow update: if isAuthed()
+                      && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['readBy']);
+        allow delete: if false;
+      }
+    }
+
+    // -------------------------------------------------------------------------
+    // users/{userId}/credit_transactions/{txId}
+    //   - Written exclusively by Cloud Functions (Admin SDK).
+    //   - Owner and admin can read for balance history / admin credit log.
+    // -------------------------------------------------------------------------
+    match /users/{userId}/credit_transactions/{txId} {
+      allow read:  if isOwner(userId) || isAdmin();
+      allow write: if false;
+    }
+
+    // -------------------------------------------------------------------------
+    // resumes/{userId}
+    //   - Written by parseResume Cloud Function (Admin SDK).
+    //   - Only the owner can read their parsed resume data.
+    // -------------------------------------------------------------------------
+    match /resumes/{userId} {
+      allow read:  if isOwner(userId);
+      allow write: if false;
+    }
+
+    // -------------------------------------------------------------------------
+    // Catch-all: deny everything not explicitly permitted above.
+    // -------------------------------------------------------------------------
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+  }
+}
