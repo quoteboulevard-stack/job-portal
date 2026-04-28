@@ -35,6 +35,9 @@ export { parseJD }     from './documents/parseJD';
 // ─── Admin ────────────────────────────────────────────────────────────────────
 export { setUserRole } from './admin/setUserRole';
 
+// ─── Users ────────────────────────────────────────────────────────────────────
+export { initUserCredits } from './users/initUserCredits';
+
 // ─── Credits ──────────────────────────────────────────────────────────────────
 export { deductCredit } from './credits/deductCredit';
 

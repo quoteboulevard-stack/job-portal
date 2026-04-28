@@ -74,11 +74,13 @@ export const parseJD = functions
 
     if (!contentType || !SUPPORTED_TYPES.has(contentType)) {
       await saveError(`Unsupported file type: ${contentType ?? 'unknown'}. Only PDF and DOCX are accepted.`);
+      return;
     }
 
     const fileSize = Number(size);
     if (fileSize > MAX_FILE_SIZE) {
       await saveError(`File exceeds 5 MB limit (${(fileSize / 1024 / 1024).toFixed(1)} MB).`);
+      return;
     }
 
     const meta: FileMeta = {
@@ -94,6 +96,7 @@ export const parseJD = functions
       buffer = contents as Buffer;
     } catch {
       await saveError('Failed to download file from Storage.');
+      return;
     }
 
     let rawText!: string;
@@ -102,6 +105,7 @@ export const parseJD = functions
       if (!rawText.trim()) throw new Error('Empty document');
     } catch (err: unknown) {
       await saveError(`Text extraction failed: ${err instanceof Error ? err.message : 'unknown error'}`);
+      return;
     }
 
     let parsed!: ParsedJD;
@@ -109,6 +113,7 @@ export const parseJD = functions
       parsed = await parseWithClaude(rawText);
     } catch (err: unknown) {
       await saveError(`Claude parsing failed: ${err instanceof Error ? err.message : 'unknown error'}`);
+      return;
     }
 
     const doc: JDDocument = { jobId, parsed, meta, status: 'success', updatedAt: serverTs };

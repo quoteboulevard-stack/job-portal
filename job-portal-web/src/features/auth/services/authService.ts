@@ -39,8 +39,6 @@ export async function signup({ email, password, name, role, location }: SignupPa
       displayName: name,
       role,
       location,
-      balance:    0,
-      totalAdded: 0,
       createdAt:  serverTimestamp(),
       updatedAt:  serverTimestamp(),
     });

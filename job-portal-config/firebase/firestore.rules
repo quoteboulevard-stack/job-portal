@@ -57,14 +57,18 @@ service cloud.firestore {
     // users/{userId}
     //   - Readable only by the account owner or admin.
     //   - On create: role must be employer/applicant (no self-promotion to admin).
-    //   - On update: role and financial fields (balance, totalAdded) are immutable by the client.
+    //     Financial fields (balance, totalAdded) are BLOCKED on create —
+    //     they are initialized exclusively by the initUserCredits Cloud Function.
+    //   - On update: role and financial fields are immutable by the client.
     // -------------------------------------------------------------------------
     match /users/{userId} {
       allow get:    if isOwner(userId) || isAdmin();
       allow list:   if isAdmin();
       allow create: if isOwner(userId)
                     && safeRole(request.resource.data)
-                    && request.resource.data.keys().hasAll(['role', 'email']);
+                    && request.resource.data.keys().hasAll(['role', 'email'])
+                    && !('balance'    in request.resource.data)
+                    && !('totalAdded' in request.resource.data);
       // Owner may update their own profile but cannot change role or financial fields.
       // Admin may update any profile (including role) but cannot touch financial fields.
       allow update: if (isOwner(userId) && roleUnchanged() && balanceUnchanged())
@@ -76,7 +80,8 @@ service cloud.firestore {
     // messages/{messageId}
     //   - Readable by sender or recipient only.
     //   - Creator must set themselves as sender; cannot spoof other senders.
-    //   - Immutable after creation (no edits; admin-only delete).
+    //   - Only the recipient may update status/rejectionReason (accept/reject).
+    //   - All other fields are immutable after creation; admin-only delete.
     // -------------------------------------------------------------------------
     match /messages/{messageId} {
       allow read:   if isAdmin()
@@ -89,7 +94,10 @@ service cloud.firestore {
                     && request.resource.data.body        is string
                     && request.resource.data.body.size() > 0
                     && request.resource.data.body.size() <= 2000;
-      allow update: if false;
+      allow update: if isAuthed()
+                    && resource.data.toUserId == request.auth.uid
+                    && request.resource.data.diff(resource.data)
+                         .affectedKeys().hasOnly(['status', 'rejectionReason']);
       allow delete: if isAdmin();
     }
 
