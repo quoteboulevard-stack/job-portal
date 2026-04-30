@@ -4,6 +4,8 @@ export type ISODateString = string;
 export type UserRole = 'job_seeker' | 'employer' | 'admin';
 export type WorkMode = 'remote' | 'hybrid' | 'onsite';
 export type EmploymentType = 'fulltime' | 'parttime' | 'contract' | 'internship' | 'freelance';
+export type JobExperience = 'entry' | 'mid' | 'senior';
+export type JobStatus = 'open' | 'closed' | 'expired';
 export type ApplicationStatus = 'applied' | 'shortlisted' | 'interview' | 'offer' | 'rejected';
 export type MessageStatus = 'waiting' | 'sent' | 'seen' | 'accepted' | 'rejected' | 'expired' | 'invalid';
 export type TransactionType = 'purchase' | 'deduction' | 'refund' | 'topup';
@@ -37,25 +39,22 @@ export interface EmployerProfile extends User {
 
 // ─── Job ──────────────────────────────────────────────────────────────────────
 
-export interface SalaryRange {
-  min: number | null;
-  max: number | null;
-  currency: string;
-}
-
 export interface Job {
   id: string;
   title: string;
   company: string;
   employerId: string;
+  description: string;
   requirements: string[];
   skills: string[];
-  salary: SalaryRange | null;
+  perks: string[];
+  salary: number | null;
   workMode: WorkMode;
   employmentType: EmploymentType;
+  experience: JobExperience;
   location: string;
-  experienceYears: number | null;
-  description?: string;
+  status: JobStatus;
+  postedAt: ISODateString;
   createdAt: ISODateString;
   updatedAt?: ISODateString;
   expiresAt?: ISODateString;

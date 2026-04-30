@@ -35,7 +35,7 @@ function normalizeStatus(value: unknown): ApplicationStatus {
   const normalized = String(value ?? "").toLowerCase();
   if (normalized === "shortlisted") return "shortlisted";
   if (normalized === "interview") return "interview";
-  if (normalized === "offer" || normalized === "accepted") return "offer";
+  if (normalized === "offer") return "offer";
   if (normalized === "rejected") return "rejected";
   return "applied";
 }
@@ -46,19 +46,14 @@ function mapApplication(id: string, data: Record<string, unknown>): ApplicationR
     jobId: String(data["jobId"] ?? ""),
     jobTitle: String(data["jobTitle"] ?? "Unknown role"),
     company: String(data["company"] ?? "Unknown company"),
-    applicantId: String(data["applicantId"] ?? data["userId"] ?? ""),
+    applicantId: String(data["applicantId"] ?? ""),
     employerId: String(data["employerId"] ?? ""),
     applicantName: String(data["applicantName"] ?? "Applicant"),
     applicantEmail: String(data["applicantEmail"] ?? ""),
     status: normalizeStatus(data["status"]),
-    appliedDate: formatDate(data["appliedAt"] ?? data["createdAt"]),
-    fitScore:
-      typeof data["fitScore"] === "number"
-        ? data["fitScore"]
-        : typeof data["fit_score"] === "number"
-          ? data["fit_score"]
-          : undefined,
-    updatedAt: formatDate(data["updatedAt"] ?? data["appliedAt"]),
+    appliedDate: formatDate(data["appliedAt"]),
+    fitScore: typeof data["fit_score"] === "number" ? data["fit_score"] : undefined,
+    updatedAt: formatDate(data["updatedAt"]),
   };
 }
 
@@ -67,9 +62,6 @@ export async function createApplication(
 ): Promise<string> {
   const { applicationId } = await callCreateApplication({
     jobId: payload.jobId,
-    jobTitle: payload.jobTitle,
-    company: payload.company,
-    employerId: payload.employerId,
   });
   return applicationId;
 }
@@ -77,21 +69,10 @@ export async function createApplication(
 export async function listApplicationsForUser(
   userId: string
 ): Promise<ApplicationRecord[]> {
-  const byApplicant = await getDocs(
+  const snap = await getDocs(
     query(collection(db, "applications"), where("applicantId", "==", userId))
   );
-
-  if (!byApplicant.empty) {
-    return byApplicant.docs.map((applicationDoc) =>
-      mapApplication(applicationDoc.id, applicationDoc.data() as Record<string, unknown>)
-    );
-  }
-
-  const byLegacyUser = await getDocs(
-    query(collection(db, "applications"), where("userId", "==", userId))
-  );
-
-  return byLegacyUser.docs.map((applicationDoc) =>
+  return snap.docs.map((applicationDoc) =>
     mapApplication(applicationDoc.id, applicationDoc.data() as Record<string, unknown>)
   );
 }

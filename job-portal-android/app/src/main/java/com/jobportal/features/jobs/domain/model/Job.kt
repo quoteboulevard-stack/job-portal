@@ -6,10 +6,13 @@ data class Job(
     val company: String,
     val location: String,
     val description: String,
-    val salary: String?,
+    val salary: Int?,
+    val experience: String,
     val workMode: WorkMode,
     val employmentType: EmploymentType,
+    val requirements: List<String>,
     val skills: List<String>,
+    val perks: List<String>,
     val employerId: String,
     val postedAt: Long
 )

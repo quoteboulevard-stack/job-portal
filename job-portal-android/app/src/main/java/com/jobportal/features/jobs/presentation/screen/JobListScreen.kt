@@ -94,9 +94,9 @@ private fun JobCard(job: Job, onClick: () -> Unit) {
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.primary
             )
-            job.salary?.let { Text(it, style = MaterialTheme.typography.bodyMedium) }
+            job.salary?.let { Text("$it", style = MaterialTheme.typography.bodyMedium) }
             Text(job.description, maxLines = 3, overflow = TextOverflow.Ellipsis, style = MaterialTheme.typography.bodySmall)
-            if (job.tags.isNotEmpty()) Text(job.tags.joinToString(" • "), maxLines = 1, overflow = TextOverflow.Ellipsis, style = MaterialTheme.typography.labelSmall)
+            if (job.skills.isNotEmpty()) Text(job.skills.joinToString(" • "), maxLines = 1, overflow = TextOverflow.Ellipsis, style = MaterialTheme.typography.labelSmall)
         }
     }
 }

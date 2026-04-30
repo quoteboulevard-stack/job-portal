@@ -97,7 +97,7 @@ class JobRepository @Inject constructor(
                 normalized.isEmpty() ||
                     job.title.lowercase().contains(normalized) ||
                     job.company.lowercase().contains(normalized) ||
-                    job.tags.any { it.lowercase().contains(normalized) }
+                    job.skills.any { it.lowercase().contains(normalized) }
             }
             .take(limit.toInt())
     }.toJobResult()
@@ -119,10 +119,8 @@ class JobRepository @Inject constructor(
 
     private fun com.google.firebase.firestore.DocumentSnapshot.toJob(): Job? {
         return try {
-            // Backward-compat: old docs stored location+employment in a single "mode"/"type" field.
-            val legacyMode = getString("mode") ?: getString("type") ?: ""
-            val workModeStr = getString("workMode") ?: if (legacyMode == "remote") "remote" else "onsite"
-            val employmentTypeStr = getString("employmentType") ?: if (legacyMode != "remote") legacyMode else "fulltime"
+            val workModeStr = getString("workMode") ?: "onsite"
+            val employmentTypeStr = getString("employmentType") ?: "fulltime"
 
             Job(
                 id = id,
@@ -130,10 +128,13 @@ class JobRepository @Inject constructor(
                 company = getString("company") ?: return null,
                 location = getString("location") ?: return null,
                 description = getString("description") ?: return null,
-                salary = getString("salary"),
+                salary = getLong("salary")?.toInt(),
+                experience = getString("experience") ?: "entry",
                 workMode = WorkMode.from(workModeStr),
                 employmentType = EmploymentType.from(employmentTypeStr),
+                requirements = (get("requirements") as? List<*>)?.filterIsInstance<String>() ?: emptyList(),
                 skills = (get("skills") as? List<*>)?.filterIsInstance<String>() ?: emptyList(),
+                perks = (get("perks") as? List<*>)?.filterIsInstance<String>() ?: emptyList(),
                 employerId = getString("employerId") ?: return null,
                 postedAt = getTimestamp("postedAt")?.toDate()?.time ?: 0L
             )

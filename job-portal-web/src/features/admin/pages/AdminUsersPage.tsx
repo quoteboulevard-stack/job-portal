@@ -5,24 +5,36 @@ import {
   type AdminUserRecord,
 } from "../services/adminService";
 import type { UserRole } from "../../auth/types";
+import "./AdminPages.css";
 
 const roles: UserRole[] = ["job_seeker", "employer", "admin"];
+const ROLE_BADGE_CLASS: Record<UserRole, string> = {
+  admin: "admin-badge--admin",
+  employer: "admin-badge--employer",
+  job_seeker: "admin-badge--job-seeker",
+};
 
 export default function AdminUsersPage() {
   const [users, setUsers] = useState<AdminUserRecord[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [nextPageToken, setNextPageToken] = useState<string | undefined>(undefined);
   const [error, setError] = useState<string | null>(null);
   const [savingId, setSavingId] = useState<string | null>(null);
 
-  const load = () => {
-    setLoading(true);
-    return listAllUsers()
-      .then(setUsers)
+  const loadPage = (startAfter?: string) => {
+    if (startAfter) setLoadingMore(true);
+    else setLoading(true);
+    return listAllUsers({ startAfter })
+      .then((result) => {
+        setUsers((prev) => startAfter ? [...prev, ...result.items] : result.items);
+        setNextPageToken(result.nextPageToken);
+      })
       .catch((err) => setError(err instanceof Error ? err.message : "Failed to load users."))
-      .finally(() => setLoading(false));
+      .finally(() => { setLoading(false); setLoadingMore(false); });
   };
 
-  useEffect(() => { void load(); }, []);
+  useEffect(() => { void loadPage(); }, []);
 
   const changeRole = async (uid: string, role: UserRole) => {
     try {
@@ -39,42 +51,29 @@ export default function AdminUsersPage() {
   };
 
   return (
-    <section style={{ display: "grid", gap: 16, padding: 16 }}>
-      <div
-        style={{
-          background: "#FFFFFF",
-          border: "1px solid #E5E7EB",
-          borderRadius: 12,
-          padding: 24,
-        }}
-      >
-        <h1 style={{ margin: 0, fontSize: 28, color: "#111827" }}>Users</h1>
-        <p style={{ margin: "8px 0 0", color: "#6B7280" }}>
+    <section className="admin-page">
+      <div className="admin-page__hero">
+        <h1 className="admin-page__title">Users</h1>
+        <p className="admin-page__subtitle">
           All registered users. Change role using the dropdown.
         </p>
       </div>
 
       {error ? (
-        <div style={{ padding: 16, borderRadius: 12, background: "#FEF2F2", color: "#B91C1C" }}>
-          {error}
-        </div>
+        <div className="admin-page__error">{error}</div>
       ) : null}
 
       {loading ? (
-        <div style={{ padding: 24, border: "1px solid #E5E7EB", borderRadius: 12 }}>
-          Loading users...
-        </div>
+        <div className="admin-page__placeholder">Loading users...</div>
       ) : users.length === 0 ? (
-        <div style={{ padding: 24, border: "1px solid #E5E7EB", borderRadius: 12 }}>
-          No users found.
-        </div>
+        <div className="admin-page__placeholder">No users found.</div>
       ) : (
-        <div style={{ overflowX: "auto" }}>
-          <table style={{ width: "100%", borderCollapse: "collapse", background: "#FFFFFF", borderRadius: 12, overflow: "hidden", border: "1px solid #E5E7EB" }}>
+        <div className="admin-table-wrap">
+          <table className="admin-table">
             <thead>
-              <tr style={{ background: "#F9FAFB" }}>
+              <tr className="admin-table__head-row">
                 {["Name", "Email", "Role", "Location", "Credits", "Joined", "Change role"].map((h) => (
-                  <th key={h} style={{ padding: "12px 16px", textAlign: "left", fontSize: 13, color: "#6B7280", fontWeight: 700, borderBottom: "1px solid #E5E7EB" }}>
+                  <th key={h} className="admin-table__head-cell">
                     {h}
                   </th>
                 ))}
@@ -82,30 +81,24 @@ export default function AdminUsersPage() {
             </thead>
             <tbody>
               {users.map((u) => (
-                <tr key={u.uid} style={{ borderBottom: "1px solid #F3F4F6" }}>
-                  <td style={{ padding: "12px 16px", color: "#111827", fontWeight: 600 }}>{u.name || "—"}</td>
-                  <td style={{ padding: "12px 16px", color: "#6B7280", fontSize: 14 }}>{u.email}</td>
-                  <td style={{ padding: "12px 16px" }}>
-                    <span style={{
-                      padding: "2px 10px",
-                      borderRadius: 99,
-                      fontSize: 13,
-                      fontWeight: 700,
-                      background: u.role === "admin" ? "#FEF3C7" : u.role === "employer" ? "#EFF6FF" : "#F0FDF4",
-                      color: u.role === "admin" ? "#92400E" : u.role === "employer" ? "#1D4ED8" : "#166534",
-                    }}>
+                <tr key={u.uid} className="admin-table__row">
+                  <td className="admin-table__cell admin-table__cell--primary">{u.name || "—"}</td>
+                  <td className="admin-table__cell admin-table__cell--reason">{u.email}</td>
+                  <td className="admin-table__cell">
+                    <span className={`admin-badge ${ROLE_BADGE_CLASS[u.role]}`}>
                       {u.role}
                     </span>
                   </td>
-                  <td style={{ padding: "12px 16px", color: "#6B7280", fontSize: 14 }}>{u.location || "—"}</td>
-                  <td style={{ padding: "12px 16px", color: "#111827" }}>{u.balance}</td>
-                  <td style={{ padding: "12px 16px", color: "#6B7280", fontSize: 14 }}>{u.createdAt}</td>
-                  <td style={{ padding: "12px 16px" }}>
+                  <td className="admin-table__cell admin-table__cell--reason">{u.location || "—"}</td>
+                  <td className="admin-table__cell admin-table__cell--balance">{u.balance}</td>
+                  <td className="admin-table__cell admin-table__cell--date">{u.createdAt}</td>
+                  <td className="admin-table__cell">
                     <select
                       value={u.role}
                       disabled={savingId === u.uid}
                       onChange={(e) => void changeRole(u.uid, e.target.value as UserRole)}
-                      style={{ padding: "6px 10px", border: "1px solid #E5E7EB", borderRadius: 6, fontSize: 14 }}
+                      className="admin-select admin-select--compact"
+                      aria-label={`Change role for ${u.name || u.email}`}
                     >
                       {roles.map((r) => (
                         <option key={r} value={r}>{r}</option>
@@ -118,6 +111,17 @@ export default function AdminUsersPage() {
           </table>
         </div>
       )}
+
+      {nextPageToken ? (
+        <button
+          type="button"
+          onClick={() => void loadPage(nextPageToken)}
+          disabled={loadingMore}
+          className="admin-button admin-button--load-more"
+        >
+          {loadingMore ? "Loading…" : "Load more"}
+        </button>
+      ) : null}
     </section>
   );
 }

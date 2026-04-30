@@ -87,9 +87,6 @@ export function callCreateJob(payload: {
 
 export function callCreateApplication(payload: {
   jobId: string;
-  jobTitle: string;
-  company: string;
-  employerId: string;
 }): CallableResponse<{ success: boolean; applicationId: string }> {
   return httpsCallable<
     typeof payload,

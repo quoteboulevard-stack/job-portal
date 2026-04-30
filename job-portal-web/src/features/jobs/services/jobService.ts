@@ -31,13 +31,13 @@ function toWorkMode(value: unknown): WorkMode {
 
 function toEmploymentType(value: unknown): EmploymentType {
   switch (String(value ?? "").toLowerCase()) {
-    case "internship":               return "internship";
-    case "freelance":                return "freelance";
-    case "contract":                 return "contract";
+    case "internship": return "internship";
+    case "freelance":  return "freelance";
+    case "contract":   return "contract";
     case "parttime":
     case "part_time":
-    case "part-time":                return "parttime";
-    default:                         return "fulltime";
+    case "part-time":  return "parttime";
+    default:           return "fulltime";
   }
 }
 
@@ -65,54 +65,35 @@ function toStringList(value: unknown): string[] {
 }
 
 function mapJob(id: string, data: Record<string, unknown>): JobRecord {
-  const experience = toExperience(data["experience"] ?? data["experienceLevel"]);
+  const experience = toExperience(data["experience"]);
   const salary =
     typeof data["salary"] === "number" && Number.isFinite(data["salary"])
       ? data["salary"]
       : undefined;
-
-  // Backward-compat: old docs stored location+employment in a single "mode" field.
-  // "remote" in the old field meant work location; everything else was employment type.
-  const legacyMode = String(data["mode"] ?? data["type"] ?? "").toLowerCase();
-  const workMode = toWorkMode(data["workMode"] ?? (legacyMode === "remote" ? "remote" : "onsite"));
-  const employmentType = toEmploymentType(
-    data["employmentType"] ?? (legacyMode !== "remote" ? legacyMode : "fulltime")
-  );
 
   return {
     id,
     title: String(data["title"] ?? "Untitled role"),
     company: String(data["company"] ?? "Unknown company"),
     location: String(data["location"] ?? "Remote"),
-    workMode,
-    employmentType,
+    workMode: toWorkMode(data["workMode"]),
+    employmentType: toEmploymentType(data["employmentType"]),
     salary,
-    salaryText: toSalaryText(data["salary"]) ?? toSalaryText(data["salaryText"]),
+    salaryText: toSalaryText(salary),
     description: String(data["description"] ?? "No description provided yet."),
     requirements: toStringList(data["requirements"]),
     skills: toStringList(data["skills"]),
     experience,
     experienceText:
-      typeof data["experienceText"] === "string" && data["experienceText"]
-        ? data["experienceText"]
-        : experience === "senior"
-          ? "5+ years"
-          : experience === "mid"
-            ? "2-4 years"
-            : "0-2 years",
+      experience === "senior" ? "5+ years" : experience === "mid" ? "2-4 years" : "0-2 years",
     perks: toStringList(data["perks"]),
-    fitScore:
-      typeof data["fitScore"] === "number"
-        ? data["fitScore"]
-        : typeof data["fit_score"] === "number"
-          ? data["fit_score"]
-          : undefined,
-    employerId: String(data["employerId"] ?? data["postedBy"] ?? ""),
+    fitScore: typeof data["fit_score"] === "number" ? data["fit_score"] : undefined,
+    employerId: String(data["employerId"] ?? ""),
   };
 }
 
 export async function fetchJobsPage(lastJobId?: string | null): Promise<JobPage> {
-  const constraints: QueryConstraint[] = [orderBy("createdAt", "desc"), limit(PAGE_SIZE + 1)];
+  const constraints: QueryConstraint[] = [orderBy("postedAt", "desc"), limit(PAGE_SIZE + 1)];
 
   if (lastJobId) {
     const cursorSnap = await getDoc(doc(db, "jobs", lastJobId));

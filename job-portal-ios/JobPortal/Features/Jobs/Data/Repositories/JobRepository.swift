@@ -61,10 +61,8 @@ final class JobRepository {
     }
 
     private static func build(id: String, data: [String: Any]) -> Job {
-        // Backward-compat: old docs stored location+employment in a single "mode" field.
-        let legacyMode = data["mode"] as? String ?? ""
-        let workModeStr = data["workMode"] as? String ?? (legacyMode == "remote" ? "remote" : "onsite")
-        let employmentTypeStr = data["employmentType"] as? String ?? (legacyMode != "remote" ? legacyMode : "fulltime")
+        let workModeStr = data["workMode"] as? String ?? "onsite"
+        let employmentTypeStr = data["employmentType"] as? String ?? "fulltime"
 
         return Job(
             id: id,
@@ -73,9 +71,12 @@ final class JobRepository {
             location: data["location"] as? String ?? "",
             workMode: Job.WorkMode(rawValue: workModeStr) ?? .onsite,
             employmentType: Job.EmploymentType(rawValue: employmentTypeStr) ?? .fulltime,
-            salary: data["salary"] as? Int ?? 0,
+            experience: data["experience"] as? String ?? "entry",
+            salary: data["salary"] as? Int,
             description: data["description"] as? String ?? "",
             requirements: data["requirements"] as? [String] ?? [],
+            skills: data["skills"] as? [String] ?? [],
+            perks: data["perks"] as? [String] ?? [],
             employerId: data["employerId"] as? String,
             postedAt: (data["postedAt"] as? Timestamp)?.dateValue() ?? Date()
         )

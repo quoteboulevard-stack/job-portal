@@ -65,7 +65,6 @@ export const createApplication = functions
       company,
       employerId,
       applicantId: uid,
-      userId: uid,
       applicantName,
       applicantEmail,
       status: 'applied',

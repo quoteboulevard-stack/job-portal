@@ -5,6 +5,7 @@
 .env.*
 !.env.example
 !.env.*.example
+.claude/settings.local.json
 
 # ──────────────────────────────────────────────────────────────────────────────
 # Node

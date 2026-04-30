@@ -55,10 +55,10 @@ fun JobDetailScreen(
                 Text(state.missingSkills.joinToString(" • "), style = MaterialTheme.typography.bodyMedium)
             }
         }
-        if (job.tags.isNotEmpty()) {
+        if (job.skills.isNotEmpty()) {
             Text("Skills", style = MaterialTheme.typography.titleMedium)
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-                job.tags.take(4).forEach { AssistChip(onClick = {}, label = { Text(it) }) }
+                job.skills.take(4).forEach { AssistChip(onClick = {}, label = { Text(it) }) }
             }
         }
         Text("About this job", style = MaterialTheme.typography.titleMedium)

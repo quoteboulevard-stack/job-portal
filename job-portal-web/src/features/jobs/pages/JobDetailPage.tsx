@@ -46,12 +46,7 @@ export default function JobDetailPage() {
     if (!user) return;
 
     try {
-      await createApplication({
-        jobId: job.id,
-        jobTitle: job.title,
-        company: job.company,
-        employerId: job.employerId,
-      });
+      await createApplication({ jobId: job.id });
       setStatus("Application submitted. You can track it from Applications.");
       setApplyOpen(false);
     } catch (submitError) {

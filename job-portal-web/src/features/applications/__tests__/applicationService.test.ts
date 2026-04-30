@@ -61,20 +61,15 @@ describe('listApplicationsForUser', () => {
 describe('createApplication', () => {
   it('delegates to the callable and returns the applicationId', async () => {
     callCreateApplication.mockResolvedValueOnce({ success: true, applicationId: 'u1_j1' });
-    const payload: ApplicationCreatePayload = {
-      jobId: 'j1', jobTitle: 'Dev', company: 'Co', employerId: 'e1',
-    };
+    const payload: ApplicationCreatePayload = { jobId: 'j1' };
     const id = await createApplication(payload);
     expect(id).toBe('u1_j1');
-    expect(callCreateApplication).toHaveBeenCalledWith({
-      jobId: 'j1', jobTitle: 'Dev', company: 'Co', employerId: 'e1',
-    });
+    expect(callCreateApplication).toHaveBeenCalledWith({ jobId: 'j1' });
   });
 
   it('propagates callable errors to the caller', async () => {
     callCreateApplication.mockRejectedValueOnce(new Error('already-exists'));
-    await expect(createApplication({ jobId: 'j1', jobTitle: 'Dev', company: 'Co', employerId: 'e1' }))
-      .rejects.toThrow('already-exists');
+    await expect(createApplication({ jobId: 'j1' })).rejects.toThrow('already-exists');
   });
 });
 

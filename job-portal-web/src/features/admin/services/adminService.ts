@@ -2,6 +2,12 @@ import { httpsCallable } from "firebase/functions";
 import { functions } from "../../../shared/services/firebaseService";
 import type { UserRole } from "../../auth/types";
 
+export interface PagedResult<T> {
+  items: T[];
+  nextPageToken?: string;
+  cursorValid?: boolean;
+}
+
 export interface AdminUserRecord {
   uid: string;
   email: string;
@@ -35,9 +41,14 @@ export async function getAdminStats(): Promise<AdminStats> {
   return result.data;
 }
 
-export async function listAllUsers(): Promise<AdminUserRecord[]> {
-  const call = httpsCallable<void, AdminUserRecord[]>(functions, "listAdminUsers");
-  const result = await call();
+export async function listAllUsers(
+  params?: { pageSize?: number; startAfter?: string }
+): Promise<PagedResult<AdminUserRecord>> {
+  const call = httpsCallable<
+    { pageSize?: number; startAfter?: string },
+    { items: AdminUserRecord[]; nextPageToken?: string; cursorValid?: boolean }
+  >(functions, "listAdminUsers");
+  const result = await call(params ?? {});
   return result.data;
 }
 
@@ -49,9 +60,14 @@ export async function updateUserRole(uid: string, role: UserRole): Promise<void>
   await call({ uid, role });
 }
 
-export async function listAllJobs(): Promise<AdminJobRecord[]> {
-  const call = httpsCallable<void, AdminJobRecord[]>(functions, "listAdminJobs");
-  const result = await call();
+export async function listAllJobs(
+  params?: { pageSize?: number; startAfter?: string }
+): Promise<PagedResult<AdminJobRecord>> {
+  const call = httpsCallable<
+    { pageSize?: number; startAfter?: string },
+    { items: AdminJobRecord[]; nextPageToken?: string; cursorValid?: boolean }
+  >(functions, "listAdminJobs");
+  const result = await call(params ?? {});
   return result.data;
 }
 
@@ -77,12 +93,14 @@ export interface AdminApplicationRecord {
   appliedAt: string;
 }
 
-export async function listAllApplications(): Promise<AdminApplicationRecord[]> {
-  const call = httpsCallable<void, AdminApplicationRecord[]>(
-    functions,
-    "listAdminApplications"
-  );
-  const result = await call();
+export async function listAllApplications(
+  params?: { pageSize?: number; startAfter?: string }
+): Promise<PagedResult<AdminApplicationRecord>> {
+  const call = httpsCallable<
+    { pageSize?: number; startAfter?: string },
+    { items: AdminApplicationRecord[]; nextPageToken?: string; cursorValid?: boolean }
+  >(functions, "listAdminApplications");
+  const result = await call(params ?? {});
   return result.data;
 }
 
@@ -107,9 +125,14 @@ export interface AdminMessageRecord {
   createdAt: string;
 }
 
-export async function listAllMessages(): Promise<AdminMessageRecord[]> {
-  const call = httpsCallable<void, AdminMessageRecord[]>(functions, "listAdminMessages");
-  const result = await call();
+export async function listAllMessages(
+  params?: { pageSize?: number; startAfter?: string }
+): Promise<PagedResult<AdminMessageRecord>> {
+  const call = httpsCallable<
+    { pageSize?: number; startAfter?: string },
+    { items: AdminMessageRecord[]; nextPageToken?: string; cursorValid?: boolean }
+  >(functions, "listAdminMessages");
+  const result = await call(params ?? {});
   return result.data;
 }
 
@@ -133,11 +156,13 @@ export interface AdminCreditTransaction {
   date: string;
 }
 
-export async function listAllCreditTransactions(): Promise<AdminCreditTransaction[]> {
-  const call = httpsCallable<void, AdminCreditTransaction[]>(
-    functions,
-    "listAdminCreditTransactions"
-  );
-  const result = await call();
+export async function listAllCreditTransactions(
+  params?: { pageSize?: number; startAfter?: string }
+): Promise<PagedResult<AdminCreditTransaction>> {
+  const call = httpsCallable<
+    { pageSize?: number; startAfter?: string },
+    { items: AdminCreditTransaction[]; nextPageToken?: string; cursorValid?: boolean }
+  >(functions, "listAdminCreditTransactions");
+  const result = await call(params ?? {});
   return result.data;
 }

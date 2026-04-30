@@ -1,7 +1,5 @@
-import type { WorkMode, EmploymentType } from '@job-portal/shared';
-export type { WorkMode, EmploymentType };
-
-export type JobExperience = "entry" | "mid" | "senior";
+import type { WorkMode, EmploymentType, JobExperience } from '@job-portal/shared';
+export type { WorkMode, EmploymentType, JobExperience };
 
 export interface JobRecord {
   id: string;

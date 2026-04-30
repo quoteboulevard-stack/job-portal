@@ -7,9 +7,12 @@ struct Job: Identifiable {
     let location: String
     let workMode: WorkMode
     let employmentType: EmploymentType
-    let salary: Int
+    let experience: String
+    let salary: Int?
     let description: String
     let requirements: [String]
+    let skills: [String]
+    let perks: [String]
     let employerId: String?
     let postedAt: Date
 

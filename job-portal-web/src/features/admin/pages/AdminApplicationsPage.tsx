@@ -4,29 +4,39 @@ import {
   listAllApplications,
   type AdminApplicationRecord,
 } from "../services/adminService";
+import "./AdminPages.css";
 
-const STATUS_COLORS: Record<string, { bg: string; color: string }> = {
-  applied:     { bg: "#EFF6FF", color: "#1D4ED8" },
-  shortlisted: { bg: "#FEF3C7", color: "#92400E" },
-  interview:   { bg: "#F5F3FF", color: "#6D28D9" },
-  offer:       { bg: "#F0FDF4", color: "#166534" },
-  rejected:    { bg: "#FEF2F2", color: "#B91C1C" },
+const STATUS_BADGE_CLASS: Record<string, string> = {
+  applied: "admin-badge--applied",
+  shortlisted: "admin-badge--shortlisted",
+  interview: "admin-badge--interview",
+  offer: "admin-badge--offer",
+  rejected: "admin-badge--rejected",
 };
 
 export default function AdminApplicationsPage() {
   const [applications, setApplications] = useState<AdminApplicationRecord[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [nextPageToken, setNextPageToken] = useState<string | undefined>(undefined);
   const [error, setError] = useState<string | null>(null);
   const [confirmId, setConfirmId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
 
-  useEffect(() => {
-    listAllApplications()
-      .then(setApplications)
+  const loadPage = (startAfter?: string) => {
+    if (startAfter) setLoadingMore(true);
+    else setLoading(true);
+    listAllApplications({ startAfter })
+      .then((result) => {
+        setApplications((prev) => startAfter ? [...prev, ...result.items] : result.items);
+        setNextPageToken(result.nextPageToken);
+      })
       .catch((err) => setError(err instanceof Error ? err.message : "Failed to load applications."))
-      .finally(() => setLoading(false));
-  }, []);
+      .finally(() => { setLoading(false); setLoadingMore(false); });
+  };
+
+  useEffect(() => { void loadPage(); }, []);
 
   const remove = async (id: string) => {
     try {
@@ -54,16 +64,16 @@ export default function AdminApplicationsPage() {
   });
 
   return (
-    <section style={{ display: "grid", gap: 16, padding: 16 }}>
-      <div style={{ background: "#FFFFFF", border: "1px solid #E5E7EB", borderRadius: 12, padding: 24 }}>
-        <h1 style={{ margin: 0, fontSize: 28, color: "#111827" }}>Applications</h1>
-        <p style={{ margin: "8px 0 0", color: "#6B7280" }}>
+    <section className="admin-page">
+      <div className="admin-page__hero">
+        <h1 className="admin-page__title">Applications</h1>
+        <p className="admin-page__subtitle">
           All applications across every employer. {!loading && `(${applications.length} total)`}
         </p>
       </div>
 
       {error ? (
-        <div style={{ padding: 16, borderRadius: 12, background: "#FEF2F2", color: "#B91C1C" }}>{error}</div>
+        <div className="admin-page__error">{error}</div>
       ) : null}
 
       <input
@@ -71,20 +81,20 @@ export default function AdminApplicationsPage() {
         placeholder="Search by applicant, job, company, or status…"
         value={search}
         onChange={(e) => setSearch(e.target.value)}
-        style={{ padding: "10px 14px", border: "1px solid #E5E7EB", borderRadius: 8, fontSize: 14 }}
+        className="admin-search"
       />
 
       {loading ? (
-        <div style={{ padding: 24, border: "1px solid #E5E7EB", borderRadius: 12 }}>Loading applications…</div>
+        <div className="admin-page__placeholder">Loading applications…</div>
       ) : filtered.length === 0 ? (
-        <div style={{ padding: 24, border: "1px solid #E5E7EB", borderRadius: 12 }}>No applications found.</div>
+        <div className="admin-page__placeholder">No applications found.</div>
       ) : (
-        <div style={{ overflowX: "auto" }}>
-          <table style={{ width: "100%", borderCollapse: "collapse", background: "#FFFFFF", border: "1px solid #E5E7EB", borderRadius: 12, overflow: "hidden" }}>
+        <div className="admin-table-wrap">
+          <table className="admin-table">
             <thead>
-              <tr style={{ background: "#F9FAFB" }}>
+              <tr className="admin-table__head-row">
                 {["Applicant", "Email", "Job", "Company", "Status", "Fit score", "Applied", ""].map((h) => (
-                  <th key={h} style={{ padding: "12px 16px", textAlign: "left", fontSize: 13, color: "#6B7280", fontWeight: 700, borderBottom: "1px solid #E5E7EB" }}>
+                  <th key={h} className="admin-table__head-cell">
                     {h}
                   </th>
                 ))}
@@ -92,37 +102,37 @@ export default function AdminApplicationsPage() {
             </thead>
             <tbody>
               {filtered.map((a) => {
-                const badge = STATUS_COLORS[a.status] ?? { bg: "#F3F4F6", color: "#6B7280" };
+                const badgeClass = STATUS_BADGE_CLASS[a.status] ?? "admin-badge--muted";
                 return (
-                  <tr key={a.id} style={{ borderBottom: "1px solid #F3F4F6" }}>
-                    <td style={{ padding: "12px 16px", fontWeight: 600, color: "#111827" }}>{a.applicantName || "—"}</td>
-                    <td style={{ padding: "12px 16px", color: "#6B7280", fontSize: 14 }}>{a.applicantEmail || "—"}</td>
-                    <td style={{ padding: "12px 16px", color: "#111827" }}>{a.jobTitle}</td>
-                    <td style={{ padding: "12px 16px", color: "#6B7280", fontSize: 14 }}>{a.company}</td>
-                    <td style={{ padding: "12px 16px" }}>
-                      <span style={{ padding: "2px 10px", borderRadius: 99, fontSize: 13, fontWeight: 700, background: badge.bg, color: badge.color }}>
+                  <tr key={a.id} className="admin-table__row">
+                    <td className="admin-table__cell admin-table__cell--primary">{a.applicantName || "—"}</td>
+                    <td className="admin-table__cell admin-table__cell--reason">{a.applicantEmail || "—"}</td>
+                    <td className="admin-table__cell admin-table__cell--balance">{a.jobTitle}</td>
+                    <td className="admin-table__cell admin-table__cell--reason">{a.company}</td>
+                    <td className="admin-table__cell">
+                      <span className={`admin-badge ${badgeClass}`}>
                         {a.status}
                       </span>
                     </td>
-                    <td style={{ padding: "12px 16px", color: "#111827" }}>
+                    <td className="admin-table__cell admin-table__cell--balance">
                       {a.fitScore !== null ? `${a.fitScore}%` : "—"}
                     </td>
-                    <td style={{ padding: "12px 16px", color: "#6B7280", fontSize: 14 }}>{a.appliedAt}</td>
-                    <td style={{ padding: "12px 16px" }}>
+                    <td className="admin-table__cell admin-table__cell--date">{a.appliedAt}</td>
+                    <td className="admin-table__cell">
                       {confirmId === a.id ? (
-                        <div style={{ display: "flex", gap: 6 }}>
+                        <div className="admin-actions admin-actions--compact">
                           <button
                             type="button"
                             onClick={() => void remove(a.id)}
                             disabled={deletingId === a.id}
-                            style={{ padding: "4px 10px", border: 0, borderRadius: 6, background: "#DC2626", color: "#FFF", fontWeight: 700, fontSize: 13, cursor: "pointer" }}
+                            className="admin-button admin-button--confirm-compact"
                           >
                             {deletingId === a.id ? "…" : "Confirm"}
                           </button>
                           <button
                             type="button"
                             onClick={() => setConfirmId(null)}
-                            style={{ padding: "4px 10px", border: "1px solid #E5E7EB", borderRadius: 6, background: "#FFF", color: "#374151", fontSize: 13, cursor: "pointer" }}
+                            className="admin-button admin-button--cancel-compact"
                           >
                             Cancel
                           </button>
@@ -131,7 +141,7 @@ export default function AdminApplicationsPage() {
                         <button
                           type="button"
                           onClick={() => setConfirmId(a.id)}
-                          style={{ padding: "4px 10px", border: "1px solid #FECACA", borderRadius: 6, background: "#FEF2F2", color: "#B91C1C", fontWeight: 700, fontSize: 13, cursor: "pointer" }}
+                          className="admin-button admin-button--danger-compact"
                         >
                           Delete
                         </button>
@@ -144,6 +154,17 @@ export default function AdminApplicationsPage() {
           </table>
         </div>
       )}
+
+      {nextPageToken ? (
+        <button
+          type="button"
+          onClick={() => void loadPage(nextPageToken)}
+          disabled={loadingMore}
+          className="admin-button admin-button--load-more"
+        >
+          {loadingMore ? "Loading…" : "Load more"}
+        </button>
+      ) : null}
     </section>
   );
 }
